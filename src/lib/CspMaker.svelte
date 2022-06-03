@@ -16,10 +16,23 @@
         'style-src': false,
       }
 
-    let showScriptSrcProps;
-    let scriptSrcSelf;
     let directives = { };
     let cspObj = { directives };
+
+    let inputs = [{title: ''}];
+
+  function addInput() {
+      directives['default-src'] = [...getDirectiveValues('default-src'), ...inputs.map(i => i.title)];
+        text = getCSP(cspObj);
+
+    inputs = [...inputs, { title: "" }];
+  }
+
+  function callFocus(input){
+    input.focus();
+  }
+
+
 
 
 
@@ -73,12 +86,36 @@
         let _dirs = [];
         for(const key in _dirValue) {
             if(_dirValue[key]) {
-                _dirs.push(key);
+                _dirs.push(`'${key}'`);
               }
           }
 
         directives[directive] = _dirs;
 
+        console.log(directives);
+
+        text = getCSP(cspObj);
+      }
+
+    function getDirectiveValues(directive) {
+      let values = directiveValues[directive];
+        return Object.keys(values)
+          .filter(k => values[k])
+      }
+
+    function updateDefaultSrcNonce(ev) {
+        if(ev.target.value) {
+        directives['default-src'] = [...getDirectiveValues('default-src'), `nonce('${ev.target.value}')`];
+          } else {
+
+        directives['default-src'] = [...getDirectiveValues('default-src')];
+            }
+        text = getCSP(cspObj);
+      }
+
+    function addDefaultSrcUrl(ev) {
+
+        directives['default-src'] = [...getDirectiveValues('default-src'), ev.target.value];
         text = getCSP(cspObj);
       }
 
@@ -97,14 +134,25 @@
       <section>
         <CheckBox handleFn={(ev) => handleDirectiveSelection('default-src', ev.target.checked)} label='default-src' />
         <div class="flex">
-          <CheckBox handleFn={(ev) => updateDirectiveValue('default-src', SELF, ev.target.checked)} label='SELF' enable={enableDirectives['default-src']}/>
-          <CheckBox handleFn={(ev) => updateDirectiveValue('default-src', INLINE, ev.target.checked)} label='INLINE' enable={enableDirectives['default-src']}/>
-          <CheckBox handleFn={(ev) => updateDirectiveValue('default-src', EVAL, ev.target.checked)} label='EVAL' enable={enableDirectives['default-src']}/>
+          <CheckBox handleFn={(ev) => updateDirectiveValue('default-src', '*', ev.target.checked)} label='*' enable={enableDirectives['default-src']}/>
+          <CheckBox handleFn={(ev) => updateDirectiveValue('default-src', 'self', ev.target.checked)} label='self' enable={enableDirectives['default-src']}/>
+          <CheckBox handleFn={(ev) => updateDirectiveValue('default-src', 'unsafe-inline', ev.target.checked)} label='unsafe-inline' enable={enableDirectives['default-src']}/>
+          <CheckBox handleFn={(ev) => updateDirectiveValue('default-src', 'unsafe-eval', ev.target.checked)} label='unsafe-eval' enable={enableDirectives['default-src']}/>
+          <CheckBox handleFn={(ev) => updateDirectiveValue('default-src', 'https:' , ev.target.checked)} label='https:' enable={enableDirectives['default-src']}/>
         </div>
 
           <div>
             <label class="block mb-1 text-indigo-600">nonce:</label>
-            <input class="block border rounded p-1 w-full" type="text"/>
+            <input class="block border rounded p-1 w-full" disabled={!enableDirectives['default-src']} on:input={updateDefaultSrcNonce} type="text"/>
+          </div>
+
+          <div class="mt-2">
+            <h3>Custom domain urls:</h3>
+            {#each inputs as i}
+              <input disabled={!enableDirectives['default-src']} class="my-1 block border rounded p-1 w-full" type="text" bind:value={i.title} use:callFocus /> 
+            {/each}
+
+            <button class="bg-gray-700 text-white px-2 py-1 rounded disabled:bg-red-500 disabled:cursor-not-allowed" disabled={!enableDirectives['default-src']} on:click={addInput}>+</button>
           </div>
       </section>
     </div>
